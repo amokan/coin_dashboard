@@ -3,13 +3,24 @@
 A simple terminal dashboard for crypto currency prices
 
 
-## Install
+## Setup
 
-Be sure that ~/.mix/escripts is in your path by setting it in your .bash_profile, .zshrc, etc. _Don't forget to re-source your terminal or open a new terminal window._
+Be sure that ~/.mix/escripts is in your path by setting it in your .bash_profile, .zshrc, etc.
 
+_Don't forget to re-source your terminal or open a new terminal window._
+
+
+#### Bash
 ```
-export PATH="$HOME/.mix/escripts:$PATH"
+echo 'export PATH="$HOME/.mix/escripts:$PATH"'  >> ~/.bash_profile
 ```
+
+#### ZSH
+```
+echo 'export PATH="$HOME/.mix/escripts:$PATH"'  >> ~/.zshrc
+```
+
+### Install Escript
 
 Install the escript by running `mix escript.install github amokan/coin_dashboard`
 
