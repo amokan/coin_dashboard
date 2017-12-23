@@ -10,11 +10,12 @@ defmodule CoinDashboard.HistoricalData do
 
   @ets_table_name :historical_data
   @ets_file_name "historical_data.tab"
-  @persist_every 60_000
+  @persist_every 30_000
   @timeout 30_000
-  @auto_update_top 35
+  @auto_update_top 40
 
-  defstruct pending_updates: [],
+  defstruct data_path: nil,
+            pending_updates: [],
             force_updates: [],
             available_currencies: [],
             always_update_top: 5,
@@ -92,7 +93,9 @@ defmodule CoinDashboard.HistoricalData do
 
   @doc false
   def init(state) do
-    PersistentEts.new(@ets_table_name, @ets_file_name, [:set, :named_table, persist_every: @persist_every])
+    updated_state = state |> create_data_directory()
+
+    PersistentEts.new(@ets_table_name, updated_state.data_path, [:set, :named_table, persist_every: @persist_every])
     Process.send(self(), :update_historical_data, [])
     Process.send_after(self(), :update_available_currencies, 1_000)
 
@@ -149,6 +152,16 @@ defmodule CoinDashboard.HistoricalData do
 
   def handle_info(:update_available_currencies, %__MODULE__{} = state) do
     {:noreply, %__MODULE__{ state | available_currencies: key_list() }}
+  end
+
+  defp create_data_directory(%__MODULE__{} = state) do
+    data_path =
+      with home_dir <- System.user_home(),
+           data_dir <- "#{home_dir}/.coin_dashboard/",
+           :ok <- data_dir |> File.mkdir_p(),
+           do: "#{data_dir}#{@ets_file_name}"
+
+    %__MODULE__{ state | data_path: data_path }
   end
 
   defp format_sparkline_data(data) when is_list(data) do
