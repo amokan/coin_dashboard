@@ -138,15 +138,20 @@ defmodule CoinDashboard.HistoricalData do
   end
 
   def handle_info(:update_historical_data_item, %__MODULE__{ pending_updates: [id | pending], available_currencies: available_currencies } = state) do
-    {:ok, data} = Coinmarketcap.fetch_coin_data(id)
+    
+    case Coinmarketcap.fetch_coin_data(id) do
+      {:ok, data} ->
+        set(id, data["price_usd"], data["price_btc"], data["volume_usd"])
+        available_currencies = [id | available_currencies] |> Enum.uniq |> Enum.sort
+        Process.send_after(self(), :update_historical_data_item, 10_000)
 
-    set(id, data["price_usd"], data["price_btc"], data["volume_usd"])
+        {:noreply, %__MODULE__{ state | pending_updates: pending, available_currencies: available_currencies, last_update: current_timestamp() }}
+      _ ->
+        
+        Process.send_after(self(), :update_historical_data_item, 30_000)
+        {:noreply, %__MODULE__{ state | pending_updates: (pending ++ [id]), last_update: current_timestamp() }}
+    end
 
-    available_currencies = [id | available_currencies] |> Enum.uniq |> Enum.sort
-
-    Process.send_after(self(), :update_historical_data_item, 10_000)
-
-    {:noreply, %__MODULE__{ state | pending_updates: pending, available_currencies: available_currencies, last_update: current_timestamp() }}
   end
   def handle_info(:update_historical_data_item, %__MODULE__{} = state), do: {:noreply, state}
 
